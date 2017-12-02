@@ -153,7 +153,7 @@ export class OpenApi3Util {
     return OpenApi3Util.specification.paths[path] && OpenApi3Util.specification.paths[path][method];
   }
 
-  async getPathSchema(path: string, method: string) {
+  static async getPathSchema(path: string, method: string) {
     return OpenApi3Util.jsonSchema[path] && OpenApi3Util.jsonSchema[path][method];
   }
 

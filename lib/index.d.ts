@@ -15,6 +15,6 @@ export declare class OpenApi3Util {
     static loadJsonSchema(): Promise<any>;
     static removePathFromSpecification(removePaths: string[], reverse?: boolean, allPaths?: OpenAPI3SpecPaths, reloadJsonSchema?: boolean): Promise<OpenAPI3SpecPaths | undefined>;
     static getPathOptions(path: string, method: string): Promise<OpenAPI3SpecMethodOptions>;
-    getPathSchema(path: string, method: string): Promise<any>;
+    static getPathSchema(path: string, method: string): Promise<any>;
 }
 export default OpenApi3Util;
