@@ -8,127 +8,124 @@ import { resolveAllOf } from './resolve-all-of';
 
 export class OpenApi3Util {
 
-  loaded: Promise<any>
+  static specification: OpenAPI3Spec;
 
-  specification: OpenAPI3Spec;
+  private static specificationOrig: OpenAPI3Spec;
 
-  private specificationOrig: OpenAPI3Spec;
+  static jsonSchema: any;
 
-  jsonSchema: any;
-
-  constructor(specificationContent?: string | object) {
-    if (typeof (specificationContent) === 'object') {
-      this.specification = <OpenAPI3Spec>specificationContent;
-    } else {
-      this.loadFromContent(<string>specificationContent, false);
-    }
-
-    this.loaded = Promise.resolve();
-  }
-
-  parseJson(content: string): Promise<OpenAPI3Spec> {
+  static parseJson(content: string): OpenAPI3Spec {
     let newSpec;
     try {
       newSpec = JSON.parse(content);
-    } catch (error) {
+    } catch (e) {
+      // console.error(e);
     }
     return newSpec;
   }
-
-  parseYaml(content: string): OpenAPI3Spec {
+  
+  static parseYaml(content: string): OpenAPI3Spec {
     let newSpec;
     try {
       newSpec = jsYaml.safeLoad(content);
     } catch (e) {
+      // console.error(e);
     }
     return newSpec;
   }
 
-  async loadFromContent(content: string, validateAfterLoad = true): Promise<OpenAPI3Spec> {
+  static async loadFromContent(content: string, validateAfterLoad = true): Promise<OpenAPI3Spec> {
     let newSpec;
 
-    newSpec = await this.parseJson(content);
+    newSpec = await OpenApi3Util.parseJson(content);
 
     if (!newSpec) {
-      newSpec = await this.parseYaml(content);
+      newSpec = await OpenApi3Util.parseYaml(content);
     }
 
-    this.specification = newSpec;
-    this.specificationOrig = Object.assign({}, newSpec);
+    OpenApi3Util.specification = newSpec;
+    OpenApi3Util.specificationOrig = Object.assign({}, newSpec);
 
-    if (!this.validateSpecAsync()) {
+    if (!OpenApi3Util.validateSpecAsync()) {
       console.error('Your specification is not valid!');
+    } else {
+      await OpenApi3Util.loadJsonSchema();
     }
 
-    return this.specification;
+    return OpenApi3Util.specification;
   }
 
-  async loadFromObject(obj: OpenAPI3Spec, validateAfterLoad = true): Promise<OpenAPI3Spec> {
-    this.specification = obj;
+  static async loadFromObject(obj: OpenAPI3Spec, validateAfterLoad = true): Promise<OpenAPI3Spec> {
+    OpenApi3Util.specification = obj;
+    OpenApi3Util.specificationOrig = Object.assign({}, OpenApi3Util.specification);
 
-    if (!this.validateSpecAsync()) {
+    if (!OpenApi3Util.validateSpecAsync()) {
       console.error('Your specification is not valid!');
+    } else {
+      await OpenApi3Util.loadJsonSchema();
     }
 
-    this.specificationOrig = Object.assign({}, this.specification);
-
-    return this.specification;
+    return OpenApi3Util.specification;
   }
 
-  async loadFromFilepath(path: string): Promise<any> {
+  static async loadFromFilepath(path: string): Promise<any> {
     if (fs.existsSync(path)) {
-      return this.loadFromContent(fs.readFileSync(path).toString());
+      return OpenApi3Util.loadFromContent(fs.readFileSync(path).toString());
     }
     return;
   }
 
-  validSpec(): boolean {
-    if (!validateOpenApi3Schema(this.specification)) {
+  static validSpec(): boolean {
+    if (!validateOpenApi3Schema(OpenApi3Util.specification)) {
       return false
     }
     return true;
   }
 
-  async validateSpecAsync(): Promise<boolean> {
-    return await this.validSpec();
+  static async validateSpecAsync(): Promise<boolean> {
+    return await OpenApi3Util.validSpec();
   }
 
-  async revertToLastLoaded(): Promise<OpenAPI3Spec> {
-    this.specification = Object.assign({}, this.specificationOrig);
-    return this.specification;
+  static async revertToLastLoaded(): Promise<OpenAPI3Spec> {
+    OpenApi3Util.specification = Object.assign({}, OpenApi3Util.specificationOrig);
+    return OpenApi3Util.specification;
   }
 
-  async dereference(): Promise<OpenAPI3Spec> {
-    this.specification = await new jsonSchemaRefParser().dereference(this.specification);
-    return this.specification;
+  static async dereference(): Promise<OpenAPI3Spec> {
+    OpenApi3Util.specification = await new jsonSchemaRefParser().dereference(OpenApi3Util.specification);
+    await this.loadJsonSchema();
+    return OpenApi3Util.specification;
+  }
+  
+  static async resolveAllOf(): Promise<OpenAPI3Spec> {
+    OpenApi3Util.specification = <OpenAPI3Spec>resolveAllOf(OpenApi3Util.specification);
+    await this.loadJsonSchema();
+    return OpenApi3Util.specification;
   }
 
-  async resolveAllOf(): Promise<OpenAPI3Spec> {
-    this.specification = <OpenAPI3Spec>resolveAllOf(this.specification);
-    return this.specification;
-  }
-
-  async loadJsonSchema(): Promise<any> {
+  static async loadJsonSchema(): Promise<any> {
     return new Promise((resolve, reject) => {
-      openapi2schema(this.specification, (err: any, result: any) => {
+      openapi2schema(OpenApi3Util.specification, (err: any, result: any) => {
         if (err) {
           console.error(err);
           reject(err);
         }
-        this.jsonSchema = result;
+        OpenApi3Util.jsonSchema = result;
 
-        resolve(this.jsonSchema);
+        resolve(OpenApi3Util.jsonSchema);
       })
     });
   }
 
-  async removePathFromSpecification(removePaths: string[], reverse?: boolean, allPaths?: OpenAPI3SpecPaths, reloadJsonSchema?: boolean) {
+  static async removePathFromSpecification(
+    removePaths: string[], reverse?: boolean, allPaths?: OpenAPI3SpecPaths, reloadJsonSchema?: boolean
+  ) {
     let paths: OpenAPI3SpecPaths;
 
     if (allPaths) {
       paths = allPaths;
     } else {
-      paths = this.specification.paths;
+      paths = OpenApi3Util.specification.paths;
     }
 
     if (!reverse) {
@@ -148,18 +145,18 @@ export class OpenApi3Util {
     if (allPaths) {
       return paths;
     } else {
-      this.specification.paths = paths;
+      OpenApi3Util.specification.paths = paths;
     }
   }
 
-  async getPathOptions(path: string, method: string) {
-    return this.specification.paths[path] && this.specification.paths[path][method];
+  static async getPathOptions(path: string, method: string) {
+    return OpenApi3Util.specification.paths[path] && OpenApi3Util.specification.paths[path][method];
   }
 
   async getPathSchema(path: string, method: string) {
-    return this.jsonSchema[path] && this.jsonSchema[path][method];
+    return OpenApi3Util.jsonSchema[path] && OpenApi3Util.jsonSchema[path][method];
   }
 
 }
 
-export default new OpenApi3Util();
+export default OpenApi3Util;
