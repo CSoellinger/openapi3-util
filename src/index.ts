@@ -156,6 +156,10 @@ export class OpenApi3Util {
   static async getPathSchema(path: string, method: string) {
     return OpenApi3Util.jsonSchema[path] && OpenApi3Util.jsonSchema[path][method];
   }
+  
+  static async getSecuritySchema(schemaName: string) {
+    return OpenApi3Util.specification.components.securitySchemes[schemaName];
+  }
 
 }
 
