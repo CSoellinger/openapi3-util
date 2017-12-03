@@ -1,4 +1,4 @@
-declare interface OpenAPI3Spec {
+export interface OpenAPI3Spec {
   openapi: string;
   info?: OpenAPI3SpecInfo;
   externalDocs?: OpenAPI3SpecExternalDocs | OpenAPI3SpecExternalDocs[];
@@ -9,29 +9,29 @@ declare interface OpenAPI3Spec {
   // 'x-openapi-mongoose'?: OpenAPI3MongooseGlobalOptions;
 }
 
-declare interface OpenAPI3SpecInfo {
+export interface OpenAPI3SpecInfo {
   title: string;
   description: string;
   version: string;
   contact: any;
 }
 
-declare interface OpenAPI3SpecExternalDocs {
+export interface OpenAPI3SpecExternalDocs {
   url: string;
   description: string;
 }
 
-declare interface OpenAPI3SpecServers {
+export interface OpenAPI3SpecServers {
   url: string;
   description: string;
 }
 
-declare interface OpenAPI3SpecTags {
+export interface OpenAPI3SpecTags {
   name: string;
   description: string;
 }
 
-declare interface OpenAPI3SpecComponents {
+export interface OpenAPI3SpecComponents {
   // schemas: OpenAPI3SpecComponentSchemas;
   schemas: any;
   securitySchemes: any;
@@ -40,15 +40,15 @@ declare interface OpenAPI3SpecComponents {
   requestBodies: any;
 }
 
-declare interface OpenAPI3SpecPaths {
+export interface OpenAPI3SpecPaths {
   [index: string]: OpenAPI3SpecMethods;
 }
 
-declare interface OpenAPI3SpecMethods {
+export interface OpenAPI3SpecMethods {
   [index: string]: OpenAPI3SpecMethodOptions;
 }
 
-declare interface OpenAPI3SpecMethodOptions {
+export interface OpenAPI3SpecMethodOptions {
   tags?: string[];
   summary?: string;
   description?: string;
@@ -62,11 +62,8 @@ declare interface OpenAPI3SpecMethodOptions {
   // 'x-middleware-send-response'?: string;
 }
 
-// declare interface OpenAPI3MongooseGlobalOptions {
+// export interface OpenAPI3MongooseGlobalOptions {
 //   'schema-options': {
 //     'exclude-schemas': any[];
 //   };
 // }
-
-declare module 'json-schema-ref-parser';
-declare module 'openapi2schema';

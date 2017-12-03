@@ -3,6 +3,7 @@ import * as jsYaml from 'js-yaml';
 import * as jsonSchemaRefParser from 'json-schema-ref-parser';
 import * as openapi2schema from 'openapi2schema';
 
+import { OpenAPI3Spec, OpenAPI3SpecPaths, OpenAPI3SpecMethodOptions } from './../typings/index.d';
 import { validateOpenApi3Schema } from './ajv';
 import { resolveAllOf } from './resolve-all-of';
 

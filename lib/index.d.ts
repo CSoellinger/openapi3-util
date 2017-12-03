@@ -1,3 +1,4 @@
+import { OpenAPI3Spec, OpenAPI3SpecPaths, OpenAPI3SpecMethodOptions } from './../typings/index.d';
 export declare class OpenApi3Util {
     static specification: OpenAPI3Spec;
     private static specificationOrig;
