@@ -3,130 +3,135 @@ import * as jsYaml from 'js-yaml';
 import * as jsonSchemaRefParser from 'json-schema-ref-parser';
 import * as openapi2schema from 'openapi2schema';
 
-import { OpenAPI3Spec, OpenAPI3SpecPaths, OpenAPI3SpecMethodOptions } from './../typings/index.d';
+import { OpenAPI3Spec } from './interface-specification';
 import { validateOpenApi3Schema } from './ajv';
 import { resolveAllOf } from './resolve-all-of';
 
-export class OpenApi3Util {
+export class OpenApi3UtilClass {
 
-  static specification: OpenAPI3Spec;
+  specification: OpenAPI3Spec;
 
-  private static specificationOrig: OpenAPI3Spec;
+  private specificationOrig: OpenAPI3Spec;
 
-  static jsonSchema: any;
+  jsonSchema: any;
 
-  static parseJson(content: string): OpenAPI3Spec {
+  private parseJson(content: string): OpenAPI3Spec {
     let newSpec;
     try {
       newSpec = JSON.parse(content);
     } catch (e) {
-      // console.error(e);
     }
     return newSpec;
   }
-  
-  static parseYaml(content: string): OpenAPI3Spec {
+
+  private parseYaml(content: string): OpenAPI3Spec {
     let newSpec;
     try {
       newSpec = jsYaml.safeLoad(content);
     } catch (e) {
-      // console.error(e);
     }
     return newSpec;
   }
 
-  static async loadFromContent(content: string, validateAfterLoad = true): Promise<OpenAPI3Spec> {
+  async loadFromContent(content: string, allowNoValidSpec = false): Promise<OpenAPI3Spec | undefined> {
     let newSpec;
 
-    newSpec = await OpenApi3Util.parseJson(content);
+    newSpec = await this.parseJson(content);
 
     if (!newSpec) {
-      newSpec = await OpenApi3Util.parseYaml(content);
+      newSpec = await this.parseYaml(content);
     }
 
-    OpenApi3Util.specification = newSpec;
-    OpenApi3Util.specificationOrig = Object.assign({}, newSpec);
+    this.specification = newSpec;
+    this.specificationOrig = Object.assign({}, newSpec);
 
-    if (!OpenApi3Util.validateSpecAsync()) {
-      console.error('Your specification is not valid!');
-    } else {
-      await OpenApi3Util.loadJsonSchema();
+    if (!await this.isValidSpecAsync()) {
+      console.warn('Your specification is not valid!');
+      if (allowNoValidSpec === false) {
+        delete this.specification;
+        delete this.specificationOrig;
+        delete this.jsonSchema;
+      }
     }
 
-    return OpenApi3Util.specification;
+    return this.specification;
   }
 
-  static async loadFromObject(obj: OpenAPI3Spec, validateAfterLoad = true): Promise<OpenAPI3Spec> {
-    OpenApi3Util.specification = obj;
-    OpenApi3Util.specificationOrig = Object.assign({}, OpenApi3Util.specification);
+  async loadFromObject(obj: OpenAPI3Spec, allowNoValidSpec = false): Promise<OpenAPI3Spec | undefined> {
+    this.specification = obj;
+    this.specificationOrig = Object.assign({}, this.specification);
 
-    if (!OpenApi3Util.validateSpecAsync()) {
-      console.error('Your specification is not valid!');
-    } else {
-      await OpenApi3Util.loadJsonSchema();
+    if (!await this.isValidSpecAsync()) {
+      console.warn('Your specification is not valid!');
+      if (allowNoValidSpec === false) {
+        delete this.specification;
+        delete this.specificationOrig;
+        delete this.jsonSchema;
+      }
     }
 
-    return OpenApi3Util.specification;
+    return this.specification;
   }
 
-  static async loadFromFilepath(path: string): Promise<any> {
+  async loadFromFilepath(path: string, allowNoValidSpec = false): Promise<any> {
     if (fs.existsSync(path)) {
-      return OpenApi3Util.loadFromContent(fs.readFileSync(path).toString());
+      return this.loadFromContent(fs.readFileSync(path).toString(), allowNoValidSpec);
+    } else {
+      delete this.specification;
+      delete this.specificationOrig;
+      delete this.jsonSchema;
     }
     return;
   }
 
-  static validSpec(): boolean {
-    if (!validateOpenApi3Schema(OpenApi3Util.specification)) {
+  isValidSpec(): boolean {
+    if (!validateOpenApi3Schema(this.specification)) {
       return false
     }
     return true;
   }
 
-  static async validateSpecAsync(): Promise<boolean> {
-    return await OpenApi3Util.validSpec();
+  async isValidSpecAsync(): Promise<boolean> {
+    return await this.isValidSpec();
   }
 
-  static async revertToLastLoaded(): Promise<OpenAPI3Spec> {
-    OpenApi3Util.specification = Object.assign({}, OpenApi3Util.specificationOrig);
-    return OpenApi3Util.specification;
-  }
-
-  static async dereference(): Promise<OpenAPI3Spec> {
-    OpenApi3Util.specification = await new jsonSchemaRefParser().dereference(OpenApi3Util.specification);
+  async dereference(): Promise<OpenAPI3Spec> {
+    this.specification = await new jsonSchemaRefParser().dereference(this.specification);
     await this.loadJsonSchema();
-    return OpenApi3Util.specification;
-  }
-  
-  static async resolveAllOf(): Promise<OpenAPI3Spec> {
-    OpenApi3Util.specification = <OpenAPI3Spec>resolveAllOf(OpenApi3Util.specification);
-    await this.loadJsonSchema();
-    return OpenApi3Util.specification;
+    return this.specification;
   }
 
-  static async loadJsonSchema(): Promise<any> {
+  async resolveAllOf(): Promise<OpenAPI3Spec> {
+    this.specification = <OpenAPI3Spec>resolveAllOf(this.specification);
+    await this.loadJsonSchema();
+    return this.specification;
+  }
+
+  async loadJsonSchema(): Promise<any> {
     return new Promise((resolve, reject) => {
-      openapi2schema(OpenApi3Util.specification, (err: any, result: any) => {
+      openapi2schema(this.specification, (err: any, result: any) => {
         if (err) {
           console.error(err);
           reject(err);
         }
-        OpenApi3Util.jsonSchema = result;
+        this.jsonSchema = result;
 
-        resolve(OpenApi3Util.jsonSchema);
+        resolve(this.jsonSchema);
       })
     });
   }
 
-  static async removePathFromSpecification(
-    removePaths: string[], reverse?: boolean, allPaths?: OpenAPI3SpecPaths, reloadJsonSchema?: boolean
-  ) {
-    let paths: OpenAPI3SpecPaths;
+  async removePathFromSpecification(removePaths: string | string[], reverse?: boolean, allPaths?: OpenAPI3Spec.Paths) {
+    if (!Array.isArray(removePaths)) {
+      removePaths = [removePaths];
+    }
+
+    let paths: OpenAPI3Spec.Paths;
 
     if (allPaths) {
       paths = allPaths;
     } else {
-      paths = OpenApi3Util.specification.paths;
+      paths = this.specification.paths;
     }
 
     if (!reverse) {
@@ -143,25 +148,36 @@ export class OpenApi3Util {
       });
     }
 
-    if (allPaths) {
-      return paths;
-    } else {
-      OpenApi3Util.specification.paths = paths;
+    if (!allPaths) {
+      this.specification.paths = paths;
     }
+
+    return paths;
   }
 
-  static async getPathOptions(path: string, method: string) {
-    return OpenApi3Util.specification.paths[path] && OpenApi3Util.specification.paths[path][method];
+  async getPathOptions(path: string, method: string) {
+    return this.specification.paths[path] && this.specification.paths[path][method];
   }
 
-  static async getPathSchema(path: string, method: string) {
-    return OpenApi3Util.jsonSchema[path] && OpenApi3Util.jsonSchema[path][method];
-  }
-  
-  static async getSecuritySchema(schemaName: string) {
-    return OpenApi3Util.specification.components.securitySchemes[schemaName];
+  async getPathSchema(path: string, method: string) {
+    return this.jsonSchema[path] && this.jsonSchema[path][method];
   }
 
+  async getSecuritySchema(schemaName: string) {
+    return this.specification.components &&
+      this.specification.components.securitySchemes[schemaName];
+  }
+
+  async revertToLastLoaded(): Promise<OpenAPI3Spec> {
+    this.specification = Object.assign({}, this.specificationOrig);
+    return this.specification;
+  }
+
+  constructor() {
+    return this;
+  }
 }
+
+export const OpenApi3Util = new OpenApi3UtilClass();
 
 export default OpenApi3Util;

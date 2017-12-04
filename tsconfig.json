@@ -23,17 +23,15 @@
     "checkJs": false,
     "noEmitHelpers": false,
     "noEmitOnError": true,
+    "strictFunctionTypes": true,
     "typeRoots": [
       "node_modules/@types",
       "typings"
     ]
   },
-  "files": [
-    "src/ajv.ts",
-    "src/index.ts",
-    "src/resolve-all-of.ts",
-    "typings/index.d.ts",
-    "typings/global.d.ts"
+  "include": [
+    "src/*.ts",
+    "typings/*.d.ts"
   ],
   "exclude": [
     "node_modules"
