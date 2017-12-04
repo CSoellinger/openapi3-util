@@ -23,6 +23,7 @@ export declare class OpenApi3UtilClass extends OpenApi3UtilSyncClass {
     protected parseYaml(content: string): Promise<OpenAPI3Spec>;
     loadFromContent(content: string, allowNoValidSpec?: boolean): Promise<OpenAPI3Spec | undefined>;
     loadFromObject(obj: OpenAPI3Spec, allowNoValidSpec?: boolean): Promise<OpenAPI3Spec | undefined>;
+    loadFromFilepath(path: string, allowNoValidSpec?: boolean): Promise<any>;
     isValidSpec(): Promise<boolean>;
     dereference(): Promise<OpenAPI3Spec>;
     resolveAllOf(): Promise<OpenAPI3Spec>;

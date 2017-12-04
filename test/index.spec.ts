@@ -7,6 +7,7 @@ import 'mocha';
 
 import { expect } from './chai';
 import { OpenApi3Util, OpenApi3UtilClass } from '../src/index';
+import { resolveAllOf } from '../src/resolve-all-of';
 
 const noFile = path.resolve(__dirname, 'no-uber.yaml');
 const specFile = path.resolve(__dirname, 'uber.yaml');
@@ -30,7 +31,7 @@ describe('openapi3-util', () => {
     util
       .loadFromFilepath(specFile)
       .then(() => {
-        expect(util.isValidSpec()).to.be.true;
+        expect(util.isValidSpecSync()).to.be.true;
         expect(util).to.have.property('specification');
         done();
       })
@@ -41,7 +42,7 @@ describe('openapi3-util', () => {
     util
       .loadFromFilepath(invalidSpecFile)
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).not.to.have.property('specification');
         done();
       })
@@ -49,7 +50,7 @@ describe('openapi3-util', () => {
   });
 
   it('Valid specification should be loaded by content and return from validSpec() true', (done: Function) => {
-    expect(util.isValidSpec()).to.be.true;
+    expect(util.isValidSpecSync()).to.be.true;
     expect(util).to.have.property('specification');
     done();
   });
@@ -58,7 +59,7 @@ describe('openapi3-util', () => {
     util
       .loadFromContent(invalidSpecContent)
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).not.to.have.property('specification');
         done();
       })
@@ -69,7 +70,7 @@ describe('openapi3-util', () => {
     util
       .loadFromObject(require('./uber.json'))
       .then(() => {
-        expect(util.isValidSpec()).to.be.true;
+        expect(util.isValidSpecSync()).to.be.true;
         expect(util).to.have.property('specification');
         done();
       })
@@ -80,7 +81,7 @@ describe('openapi3-util', () => {
     util
       .loadFromObject(require('./uber.invalid.json'))
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).not.to.have.property('specification');
         done();
       })
@@ -91,7 +92,7 @@ describe('openapi3-util', () => {
     util
       .loadFromObject(require('./uber.invalid.json'), true)
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).to.have.property('specification');
         done();
       })
@@ -114,11 +115,14 @@ describe('openapi3-util', () => {
     util
       .loadFromFilepath(noFile)
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        done('no valid path loaded..');
+      })
+      .catch((err: any) => {
+        expect(err).to.be.equal('path do not exist');
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).not.to.have.property('specification');
         done();
-      })
-      .catch((err: any) => done(err));
+      });
   });
 
   it('Check dereference', (done: Function) => {
@@ -154,7 +158,7 @@ describe('openapi3-util', () => {
 
   it('Check async validate', (done: Function) => {
     util
-      .isValidSpecAsync()
+      .isValidSpec()
       .then((isValid: boolean) => {
         expect(isValid).to.be.true;
         done();
@@ -172,7 +176,7 @@ describe('openapi3-util', () => {
 
   it('Remove path from schema', (done: Function) => {
     util
-      .removePathFromSpecification(['/products'])
+      .removePath(['/products'])
       .then((paths: any) => {
         expect(paths).not.to.have.property('/products');
         done();
@@ -192,7 +196,7 @@ describe('openapi3-util', () => {
     let paths = util.specification.paths;
 
     util
-      .removePathFromSpecification('/products', false, paths)
+      .removePath('/products', false, paths)
       .then((paths: any) => {
         expect(paths).not.to.have.property('/products');
         done();
@@ -203,7 +207,7 @@ describe('openapi3-util', () => {
     let paths = util.specification.paths;
 
     util
-      .removePathFromSpecification('/productsxy', false, paths)
+      .removePath('/productsxy', false, paths)
       .then((paths: any) => {
         expect(paths).to.have.property('/products');
         done();
@@ -214,7 +218,7 @@ describe('openapi3-util', () => {
     let paths = util.specification.paths;
 
     util
-      .removePathFromSpecification('/products', true, paths)
+      .removePath('/products', true, paths)
       .then((paths: any) => {
         expect(paths).to.have.property('/products');
         done();
@@ -241,6 +245,24 @@ describe('openapi3-util', () => {
       }).catch((err: any) => done(err));
   });
 
+  it('Parse yaml async', (done: Function) => {
+    util
+      .parseYaml(specContent)
+      .then((spec: any) => {
+        expect(spec).to.have.property('components');
+        done();
+      });
+  });
+
+  it('Parse json async', (done: Function) => {
+    util
+      .parseJson(fs.readFileSync(path.resolve(__dirname, 'uber.json')))
+      .then((spec: any) => {
+        expect(spec).to.have.property('components');
+        done();
+      });
+  });
+
   it('Get path schema', (done: Function) => {
     util
       .loadJsonSchema()
@@ -258,11 +280,47 @@ describe('openapi3-util', () => {
     util
       .loadFromContent(invalidSpecContent, true)
       .then(() => {
-        expect(util.isValidSpec()).to.be.false;
+        expect(util.isValidSpecSync()).to.be.false;
         expect(util).to.have.property('specification');
         done();
       })
       .catch((err: any) => done(err));
+  });
+
+  it('Test resolve all of', (done: Function) => {
+    const obj = resolveAllOf({});
+    expect(obj).is.empty;
+    done();
+  });
+
+  it('Test sync methods', (done: Function) => {
+    util.loadFromFilepathSync(specFile);
+    expect(util.isValidSpecSync()).to.be.true;
+
+    util.loadFromFilepathSync(invalidSpecFile, true);
+    expect(util.isValidSpecSync()).to.be.false;
+
+    util.loadFromContentSync(specContent);
+    expect(util.isValidSpecSync()).to.be.true;
+    
+    util.loadFromContentSync(invalidSpecContent, true);
+    expect(util.isValidSpecSync()).to.be.false;
+    
+    util.loadFromFilepathSync(noFile, true);
+    expect(util.isValidSpecSync()).to.be.false;
+    expect(util).not.to.have.property('specification');
+
+    util.loadFromObjectSync(require('./uber.invalid.json'));
+    expect(util.isValidSpecSync()).to.be.false;
+
+    util.loadFromObjectSync(require('./uber.json'));
+    expect(util.isValidSpecSync()).to.be.true;
+
+    util.dereferenceSync();
+    expect(util.specification.paths['/products'].get.responses['200'].content['application/json'].schema)
+      .to.have.property('properties');
+
+    done();
   });
 
 });

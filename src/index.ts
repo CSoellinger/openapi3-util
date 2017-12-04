@@ -177,6 +177,28 @@ export class OpenApi3UtilClass extends OpenApi3UtilSyncClass {
     return super.loadFromObjectSync(obj, allowNoValidSpec);
   }
 
+  async loadFromFilepath(path: string, allowNoValidSpec = false): Promise<any> {
+    return new Promise((resolve, reject) => {
+      fs.exists(path, (exists: boolean) => {
+        if (!exists) {
+          delete this.specification;
+          delete this.specificationOrig;
+          delete this.jsonSchema;
+          reject('path do not exist');
+        } else {
+          fs.readFile(path, (err, data) => {
+            // if (err) {
+            //   reject(err);
+            //   throw Error(err.message);
+            // }
+
+            this.loadFromContent(data.toString(), allowNoValidSpec).then((val) => resolve(val));
+          });
+        }
+      });
+    });
+  }
+
   async isValidSpec(): Promise<boolean> {
     return this.isValidSpecSync();
   }
@@ -184,7 +206,8 @@ export class OpenApi3UtilClass extends OpenApi3UtilSyncClass {
   async dereference(): Promise<OpenAPI3Spec> {
     return new jsonSchemaRefParser().dereference(this.specification).then((spec: OpenAPI3Spec) => {
       this.specification = spec;
-    }).catch((e: any) => { console.error(e); });
+    });
+    // .catch((e: any) => { console.error(e); });
   }
 
   async resolveAllOf(): Promise<OpenAPI3Spec> {
