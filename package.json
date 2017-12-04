@@ -1,6 +1,6 @@
 {
   "name": "openapi3-util",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Just a little helper to handle openapi v3 specifications as YAML or JSON.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -12,7 +12,7 @@
     "lint": "./node_modules/.bin/tslint {src,test}/**/*.ts --format stylish",
     "pretest": "npm run build",
     "release": "./node_modules/.bin/release-it -p -n",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
