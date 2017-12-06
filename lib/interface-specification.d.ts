@@ -27,11 +27,45 @@ export declare namespace OpenAPI3Spec {
         description?: string;
     }
     interface Components {
-        schemas?: any;
+        schemas?: Components.Schemas;
         securitySchemes?: any;
         parameters?: any;
         responses?: any;
         requestBodies?: any;
+    }
+    namespace Components {
+        interface Schemas {
+            [index: string]: Schema;
+        }
+        interface Schema {
+            required?: string[];
+            properties: Schema.Properties;
+        }
+        namespace Schema {
+            interface Properties {
+                [index: string]: Property;
+            }
+            interface Property {
+                type: string;
+                format?: string;
+                description?: string;
+                default?: any;
+                oneOf?: any[];
+                allOf?: any[];
+                anyOf?: any[];
+                nullable?: boolean;
+                items?: any;
+                enum?: any[];
+                minimum?: number;
+                maximum?: number;
+                multipleOf?: number;
+                exclusiveMinimum?: boolean;
+                exclusiveMaximum?: boolean;
+                additionalProperties?: any;
+                minLength?: number;
+                maxLength?: number;
+            }
+        }
     }
     interface Paths {
         [index: string]: Methods;
