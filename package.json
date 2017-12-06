@@ -1,6 +1,6 @@
 {
   "name": "openapi3-util",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Just a little helper to handle openapi v3 specifications as YAML or JSON.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
