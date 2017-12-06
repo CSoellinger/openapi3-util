@@ -73,6 +73,7 @@ export namespace OpenAPI3Spec {
         additionalProperties?: any;
         minLength?: number;
         maxLength?: number;
+        properties?: any;
       }
     }
   }
